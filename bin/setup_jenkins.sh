@@ -35,7 +35,23 @@ oc new-build \
   -n ${GUID}-jenkins
 
 # Create pipeline build config pointing to the ${REPO} with contextDir `openshift-tasks`
-# TBD
+echo "
+kind: BuildConfig
+apiVersion: v1
+metadata:
+  name: tasks-pipeline
+spec:
+  source:
+    type: Git
+    git:
+      uri: ${REPO}
+      ref: master
+    contextDir: openshift-tasks
+  strategy:
+    type: JenkinsPipeline
+    jenkinsPipelineStrategy:
+      jenkinsfilePath: Jenkinsfile
+" | oc create -f - -n ${GUID}-jenkins
 
 # Make sure that Jenkins is fully up and running before proceeding!
 while : ; do
