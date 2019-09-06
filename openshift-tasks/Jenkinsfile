@@ -41,7 +41,6 @@ podTemplate(
       // Do not run tests in this step
       stage('Build war') {
         echo "Building version ${devTag}"
-
         // Execute Maven Build
         sh "${mvnCmd} clean package -DskipTests=true"
       }
@@ -51,13 +50,18 @@ podTemplate(
         // Using Maven run the unit tests
         stage('Unit Tests') {
           echo "Running Unit Tests"
-          // TBD: Execute Unit Tests
+          // Execute Unit Tests
+          sh "${mvnCmd} test"
         }
       }, codeAnalysis: {
         // Using Maven to call SonarQube for Code Analysis
         stage('Code Analysis') {
           echo "Running Code Analysis"
-          // TBD: Execute Sonarqube Tests
+          // Execute Sonarqube Tests
+          sh "${mvnCmd} sonar:sonar \
+            -Dsonar.host.url=http://sonarqube.gpte-hw-cicd.svc.cluster.local:9000/ \
+            -Dsonar.projectName=${JOB_BASE_NAME} \
+            -Dsonar.projectVersion=${devTag}"
         }
       },
       failFast: true
