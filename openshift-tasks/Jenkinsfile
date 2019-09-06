@@ -52,6 +52,7 @@ podTemplate(
         // Using Maven run the unit tests
         stage('Unit Tests') {
           echo "Running Unit Tests"
+
           // Execute Unit Tests
           sh "${mvnCmd} test"
         }
@@ -59,6 +60,7 @@ podTemplate(
         // Using Maven to call SonarQube for Code Analysis
         stage('Code Analysis') {
           echo "Running Code Analysis"
+
           // Execute Sonarqube Tests
           sh "${mvnCmd} sonar:sonar \
             -Dsonar.host.url=http://sonarqube.gpte-hw-cicd.svc.cluster.local:9000/ \
@@ -82,14 +84,16 @@ podTemplate(
       stage('Build and Tag OpenShift Image') {
         echo "Building OpenShift container image tasks:${devTag}"
 
-        // Build Image, tag Image
         script {
           openshift.withCluster() {
             openshift.withProject("${GUID}-tasks-dev") {
+              // Build Image
               openshift.selector("bc", "tasks").startBuild(
                 "--from-file=./target/openshift-tasks.war", 
                 "--wait=true"
               )
+
+              // Tag Image
               openshift.tag(
                 "tasks:latest", 
                 "tasks:${devTag}"
@@ -104,10 +108,40 @@ podTemplate(
         echo "Deploying container image to Development Project"
 
         // Deploy to development Project
+        script {
+          openshift.withCluster() {
+            openshift.withProject("${GUID}-tasks-dev") {
 
-        // Set Image, Set VERSION
+              // Set Image
+              openshift.set(
+                "image", 
+                "dc/tasks", 
+                "tasks=docker-registry.default.svc:5000/${devProject}/tasks:${devTag}"
+              )
 
-        // Make sure the application is running and ready before proceeding
+              // Set VERSION
+              openshift.set(
+                "env",
+                "dc/tasks",
+                "VERSION='${devTag} (tasks-dev)'"
+              )
+
+              // Replace Placeholders in configmap/tasks-config
+              openshift.selector("configmap", "tasks-config").delete()
+              openshift.create(
+                "configmap",
+                "tasks-config",
+                "--from-file=./configuration/application-users.properties",
+                "--from-file=./configuration/application-roles.properties"
+              )
+
+              // Make sure the application is running and ready before proceeding
+              def dc = openshift.selector("dc", "tasks")
+              dc.rollout().latest()
+              dc.rollout().status()
+            }
+          }
+        }
       }
 
       // Copy Image to Nexus container registry
