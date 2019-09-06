@@ -1,6 +1,6 @@
 #!groovy
 
-def GUID = env.GUID
+def GUID = 00e1
 
 podTemplate(
   label: "skopeo-pod",
