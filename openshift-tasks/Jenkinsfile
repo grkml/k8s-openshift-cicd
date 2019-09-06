@@ -140,9 +140,9 @@ podTemplate(
               )
 
               // Make sure the application is running and ready before proceeding
-              def dc = openshift.selector("dc", "tasks")
-              dc.rollout().latest()
-              dc.rollout().status()
+              def devDc = openshift.selector("dc", "tasks")
+              devDc.rollout().latest()
+              devDc.rollout().status()
             }
           }
         }
