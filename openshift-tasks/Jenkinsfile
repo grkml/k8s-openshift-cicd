@@ -176,7 +176,7 @@ podTemplate(
 
       // Blue/Green Deployment into Production
       // -------------------------------------
-      def destApp   = "tasks-green"
+      def destApp   = ""
       def activeApp = ""
 
       stage('Blue/Green Production Deployment') {
@@ -190,6 +190,8 @@ podTemplate(
             activeApp = openshift.selector("route", "tasks").object().spec.to.name
             if (activeApp == "tasks-green") {
               destApp = "tasks-blue"
+            } else if (activeApp == "tasks-blue") {
+              destApp = "tasks-green"
             }
 
             echo "The Active Application is ${activeApp}"
