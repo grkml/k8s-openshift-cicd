@@ -206,7 +206,7 @@ podTemplate(
               openshift.set(
                 "image", 
                 "dc/${destApp}", 
-                "tasks=docker-registry.default.svc:5000/${GUID}-tasks-dev/tasks:${prodTag}"
+                "${destApp}=docker-registry.default.svc:5000/${GUID}-tasks-dev/tasks:${prodTag}"
               )
 
               openshift.set(
