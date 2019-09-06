@@ -184,41 +184,44 @@ podTemplate(
         //      Set Image, Set VERSION
         //      Deploy into the other application
         //      Make sure the application is running and ready before proceeding
+        
+        script {
+          openshift.withCluster() {
+            openshift.withProject("${GUID}-tasks-prod") {
+              activeApp = openshift.selector("route", "tasks").object().spec.to.name
+              if (activeApp == "tasks-green") {
+                destApp = "tasks-blue"
+              } else if (activeApp == "tasks-blue") {
+                destApp = "tasks-green"
+              }
 
-        openshift.withCluster() {
-          openshift.withProject("${GUID}-tasks-prod") {
-            activeApp = openshift.selector("route", "tasks").object().spec.to.name
-            if (activeApp == "tasks-green") {
-              destApp = "tasks-blue"
-            } else if (activeApp == "tasks-blue") {
-              destApp = "tasks-green"
+              echo "The Active Application is ${activeApp}"
+              echo "The Destination Application is ${destApp}"
+
+              def prodDc = openshift.selector("dc/${destApp}").object()
+
+              prodDc.spec.template.spec.containers[0].image="docker-registry.default.svc:5000/${GUID}-tasks-dev/tasks:${prodTag}"
+              openshift.set(
+                "env",
+                "dc/${destApp}",
+                "VERSION='${prodTag} (${destApp})'"
+              )
+
+              openshift.apply(dc)
+
+              // Update Config Map in change config files changed in the source
+              openshift.selector("configmap", "${destApp}-config").delete()
+              def configmap = openshift.create(
+                "configmap", 
+                "${destApp}-config", 
+                "--from-file=./configuration/application-users.properties", 
+                "--from-file=./configuration/application-roles.properties" 
+              )
+
+              dc.rollout().latest()
+              dc.rollout().status()
+
             }
-
-            echo "The Active Application is ${activeApp}"
-            echo "The Destination Application is ${destApp}"
-
-            def dc = openshift.selector("dc/${destApp}").object()
-            dc.spec.template.spec.containers[0].image="docker-registry.default.svc:5000/${GUID}-tasks-dev/tasks:${prodTag}"
-            openshift.set(
-              "env",
-              "dc/${destApp}",
-              "VERSION='${prodTag} (${destApp})'"
-            )
-
-            openshift.apply(dc)
-
-            // Update Config Map in change config files changed in the source
-            openshift.selector("configmap", "${destApp}-config").delete()
-            def configmap = openshift.create(
-              "configmap", 
-              "${destApp}-config", 
-              "--from-file=./configuration/application-users.properties", 
-              "--from-file=./configuration/application-roles.properties" 
-            )
-
-            dc.rollout().latest()
-            dc.rollout().status()
-
           }
         }
       }
