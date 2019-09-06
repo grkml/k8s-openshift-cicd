@@ -21,7 +21,7 @@ podTemplate(
     // settings for our Nexus installation
     def mvnCmd = "mvn -s ../nexus_settings.xml"
 
-    // Checkout Source Code.
+    // Checkout Source Code
     stage('Checkout Source') {
       checkout scm
     }
@@ -34,7 +34,7 @@ podTemplate(
       // Extract version from the pom.xml
       def version = getVersionFromPom("pom.xml")
 
-      // TBD Set the tag for the development image: version + build number
+      // Set the tag for the development image: version + build number
       def devTag  = "${version}-${currentBuild.number}"
       // Set the tag for the production image: version
       def prodTag = "${version}"
@@ -43,32 +43,36 @@ podTemplate(
       // Do not run tests in this step
       stage('Build war') {
         echo "Building version ${devTag}"
+
         // Execute Maven Build
         sh "${mvnCmd} clean package -DskipTests=true"
       }
 
       // The next two stages should run in parallel
-      parallel unitTests: {
-        // Using Maven run the unit tests
-        stage('Unit Tests') {
-          echo "Running Unit Tests"
+      stage("Run unit tests and code analysis in parallel") {
+        parallel unitTests: {
+          // Using Maven run the unit tests
+          stage('Unit Tests') {
+            echo "Running Unit Tests"
 
-          // Execute Unit Tests
-          sh "${mvnCmd} test"
-        }
-      }, codeAnalysis: {
-        // Using Maven to call SonarQube for Code Analysis
-        stage('Code Analysis') {
-          echo "Running Code Analysis"
+            // Execute Unit Tests
+            sh "${mvnCmd} test"
+          }
+        }, codeAnalysis: {
+          // Using Maven to call SonarQube for Code Analysis
+          stage('Code Analysis') {
+            echo "Running Code Analysis"
 
-          // Execute Sonarqube Tests
-          sh "${mvnCmd} sonar:sonar \
-            -Dsonar.host.url=http://sonarqube.gpte-hw-cicd.svc.cluster.local:9000/ \
-            -Dsonar.projectName=${JOB_BASE_NAME} \
-            -Dsonar.projectVersion=${devTag}"
-        }
-      },
-      failFast: true
+            // Execute Sonarqube Tests
+            sh "${mvnCmd} sonar:sonar \
+              -DskipTests \
+              -Dsonar.host.url=http://sonarqube.gpte-hw-cicd.svc.cluster.local:9000/ \
+              -Dsonar.projectName=${JOB_BASE_NAME} \
+              -Dsonar.projectVersion=${devTag}"
+          }
+        },
+        failFast: true
+      }
 
       // Publish the built war file to Nexus
       stage('Publish to Nexus') {
