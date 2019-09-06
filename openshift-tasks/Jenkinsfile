@@ -237,6 +237,19 @@ podTemplate(
       stage('Switch over to new Version') {
         echo "Switching Production application to ${destApp}."
         // TBD: Execute switch
+
+        script {
+          openshift.withCluster() {
+            openshift.withProject("${GUID}-tasks-prod") {
+              openshift.set(
+                "route-backends",
+                "tasks",
+                "${destApp}=100%",
+                "${activeApp}=0%"
+              )
+            }
+          }
+        }
       }
     }
   }
