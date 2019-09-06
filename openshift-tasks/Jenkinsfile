@@ -1,5 +1,5 @@
 #!groovy
-def GUID = "11d7"
+// def GUID = "11d7"
 
 podTemplate(
   label: "skopeo-pod",
