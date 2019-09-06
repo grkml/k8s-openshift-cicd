@@ -198,16 +198,23 @@ podTemplate(
               echo "The Active Application is ${activeApp}"
               echo "The Destination Application is ${destApp}"
 
-              def prodDc = openshift.selector("dc/${destApp}").object()
+              // def prodDc = openshift.selector("dc/${destApp}").object()
 
-              prodDc.spec.template.spec.containers[0].image="docker-registry.default.svc:5000/${GUID}-tasks-dev/tasks:${prodTag}"
+              // prodDc.spec.template.spec.containers[0].image="docker-registry.default.svc:5000/${GUID}-tasks-dev/tasks:${prodTag}"
+
+              openshift.set(
+                "image", 
+                "dc/${destApp}", 
+                "tasks=docker-registry.default.svc:5000/${GUID}-tasks-dev/tasks:${prodTag}"
+              )
+
               openshift.set(
                 "env",
                 "dc/${destApp}",
                 "VERSION='${prodTag} (${destApp})'"
               )
 
-              openshift.apply(dc)
+              // openshift.apply(dc)
 
               // Update Config Map in change config files changed in the source
               openshift.selector("configmap", "${destApp}-config").delete()
@@ -218,8 +225,9 @@ podTemplate(
                 "--from-file=./configuration/application-roles.properties" 
               )
 
-              dc.rollout().latest()
-              dc.rollout().status()
+              def prodDc = openshift.selector("dc", "${destApp}")
+              prodDc.rollout().latest()
+              prodDc.rollout().status()
 
             }
           }
