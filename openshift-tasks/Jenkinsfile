@@ -157,7 +157,7 @@ podTemplate(
           --src-tls-verify=false \
           --dest-tls-verify=false \
           --src-creds openshift:\$(oc whoami -t) \
-          --dest-creds admin:admin123 \
+          --dest-creds admin:redhat \
           docker://docker-registry.default.svc.cluster.local:5000/${GUID}-tasks-dev/tasks:${devTag} \
           docker://nexus3-registry.gpte-hw-cicd.svc.cluster.local:5000/tasks:${devTag}"
 
