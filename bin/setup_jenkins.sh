@@ -56,8 +56,7 @@ items:
         jenkinsfilePath: Jenkinsfile
 kind: List
 metadata: []" | oc create -f - -n ${GUID}-jenkins
-
-#oc set env bc/tasks-pipeline GUID=${GUID}
+oc set env bc/tasks-pipeline GUID=${GUID}
 
 # Make sure that Jenkins is fully up and running before proceeding!
 while : ; do
