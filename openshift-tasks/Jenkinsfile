@@ -199,10 +199,6 @@ podTemplate(
               echo "The Active Application is ${activeApp}"
               echo "The Destination Application is ${destApp}"
 
-              // def prodDc = openshift.selector("dc/${destApp}").object()
-
-              // prodDc.spec.template.spec.containers[0].image="docker-registry.default.svc:5000/${GUID}-tasks-dev/tasks:${prodTag}"
-
               openshift.set(
                 "image", 
                 "dc/${destApp}", 
@@ -214,8 +210,6 @@ podTemplate(
                 "dc/${destApp}",
                 "VERSION='${prodTag} (${destApp})'"
               )
-
-              // openshift.apply(dc)
 
               // Update Config Map in change config files changed in the source
               openshift.selector("configmap", "${destApp}-config").delete()
